@@ -65,8 +65,7 @@ def get_payload(**context):
     #### POST API with endpoint = '{base_url}/dags/{dag_name}/dag_runs'
     #### conf payload = {"key1": "value1", "key2": "value2"}    #note: use "double" quotes json body
     execution_date = context.get('logical_date')    #<datetime> object, this is the DAG run execution date in UTC timezone
-    print('#### data_interval_start:', execution_date)                       #2023-01-12T10:31:14+00:00    #use this!
-    print('#### data_interval_start:', str(execution_date))                  #2023-01-12T10:31:14+00:00
+    print('#### data_interval_start:', execution_date)                       #2023-01-12T10:31:14+00:00    #use this for UTC
     print('#### data_interval_end:', str(execution_date.add(minutes=30)))    #2023-01-12T11:01:14+00:00
 
     try:
@@ -91,10 +90,8 @@ def get_task_instance(**kwargs):
 def get_some_kwargs(**kwargs):
     #### get some key word arguments
     execution_date = kwargs['logical_date']    #<datetime> object, this is the DAG run execution date in UTC timezone
-    print('#### execution_date:', execution_date)                                                 #2023-01-12T10:31:14+00:00    #use this for UTC
-    print('#### execution_date:', execution_date.astimezone(timezone.utc))                        #2023-01-12T10:31:14+00:00
-    print('#### execution_date:', execution_date.astimezone(timezone.utc).astimezone(localtz))    #2023-01-12T18:31:14+08:00
-    print('#### execution_date:', execution_date.astimezone(localtz))                             #2023-01-12T18:31:14+08:00    #use this for GMT+8!
+    print('#### execution_date:', execution_date)                        #2023-01-12T10:31:14+00:00    #use this for UTC
+    print('#### execution_date:', execution_date.astimezone(localtz))    #2023-01-12T18:31:14+08:00    #use this for GMT+8
 
     some_kwargs = kwargs['my_param']
     print('#### my_param:', some_kwargs)    #my_param: Additional info from kwargs
@@ -114,10 +111,10 @@ def create_excel(**kwargs):
     #convert to CSV file
     df1.to_csv(excel_file_path2, index=False)
 
-    # #convert to Excel file
-    # with pd.ExcelWriter(excel_file_path) as writer:
-    #     df1.to_excel(writer, sheet_name='sheet1', encoding='utf-8-sig', index=False)
-    #     df2.to_excel(writer, sheet_name='sheet2', encoding='utf-8-sig', index=False)
+    #convert to Excel file
+    with pd.ExcelWriter(excel_file_path) as writer:
+        df1.to_excel(writer, sheet_name='sheet1', encoding='utf-8-sig', index=False)
+        df2.to_excel(writer, sheet_name='sheet2', encoding='utf-8-sig', index=False)
 
     file_size = Path(excel_file_path2).stat().st_size*0.000001
     print('#### Excel file path:', excel_file_path2)
@@ -138,50 +135,50 @@ def build_email_with_attachment(subject, **context):
     addressee = recipient_email[0].split('@')[0].split('.')[0].title()    #first name of the first email in Titlecase
     print(addressee)
 
-    # #attach and send email
-    # file_size = Path(excel_file_path).stat().st_size*0.000001
-    # print('#### Excel file consumed {:.2f} MB'.format(file_size))    #email attachment limit max 20MB
-    # if file_size < 20:
-    #     email_op = EmailOperator(
-    #     task_id = 'send_email',
-    #     to = recipient_email,
-    #     subject = subject,
-    #     html_content = ('Hi ' + addressee + '... <br>Please see attached file as requested. <br><br>Thank you!'),
-    #     files = [excel_file_path]
-    #     )
-    # else:
-    #     email_op = EmailOperator(
-    #     task_id = 'send_email',
-    #     to = recipient_email,
-    #     subject = subject,
-    #     html_content = ('Hi ' + addressee + '... <br>Excel file size has exceeded 20MB. <br><br>Please contact Support.')
-    #     )
-    # email_op.execute(context)
+    #attach and send email
+    file_size = Path(excel_file_path).stat().st_size*0.000001
+    print('#### Excel file consumed {:.2f} MB'.format(file_size))    #email attachment limit max 20MB
+    if file_size < 20:
+        email_op = EmailOperator(
+        task_id = 'send_email',
+        to = recipient_email,
+        subject = subject,
+        html_content = ('Hi ' + addressee + '... <br>Please see attached file as requested. <br><br>Thank you!'),
+        files = [excel_file_path]
+        )
+    else:
+        email_op = EmailOperator(
+        task_id = 'send_email',
+        to = recipient_email,
+        subject = subject,
+        html_content = ('Hi ' + addressee + '... <br>Excel file size has exceeded 20MB. <br><br>Please contact Support.')
+        )
+    email_op.execute(context)
 
 
 
 
-hello_operator = PythonOperator(
-    task_id = 'hello_task', 
+print_hello = PythonOperator(
+    task_id = 'print_hello', 
     python_callable = print_hello, 
     dag = dag
 )
 
-getPayload = PythonOperator(
+get_payload = PythonOperator(
     task_id = 'get_payload',
     provide_context = True,
     python_callable = get_payload,
     dag = dag
 )
 
-getTaskInstance = PythonOperator(
+get_task_instance = PythonOperator(
     task_id = 'get_task_instance',
     provide_context = True,
     python_callable = get_task_instance,
     dag = dag
 )
 
-getSomeKwargs = PythonOperator(
+get_some_kwargs = PythonOperator(
     task_id = 'get_some_kwargs',
     provide_context = True,
     python_callable = get_some_kwargs,
@@ -191,14 +188,14 @@ getSomeKwargs = PythonOperator(
     dag = dag
 )
 
-createExcel = PythonOperator(
+create_excel = PythonOperator(
     task_id = 'create_excel',
     provide_context = True,
     python_callable = create_excel,
     dag = dag
 )
 
-buildEmail = PythonOperator(
+build_email_with_attachment = PythonOperator(
     task_id = 'build_email_with_attachment',
     provide_context = True,
     python_callable = build_email_with_attachment,
@@ -207,4 +204,4 @@ buildEmail = PythonOperator(
 )
 
 
-hello_operator >> getPayload >> getTaskInstance >> getSomeKwargs >> createExcel >> buildEmail
+print_hello >> get_payload >> get_task_instance >> get_some_kwargs >> create_excel >> build_email_with_attachment
