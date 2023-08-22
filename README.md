@@ -76,9 +76,11 @@ The webserver is available at: http://localhost:8080 <br>
 (Note: this might take a minute to be ready) <br>
 The default account has the login `airflow` and the password `airflow`
 
+When the Airflow container is running on Docker, you are free to edit the DAG files and test running them on Airflow (via browser). This includes files in the mounted volumes such as `utils` folder.
+
 
 **Step 6**. Stop and remove container (Ctrl+C) <br>
-Option (i) To keep volumes (folders) for the next run
+Option (i) To keep volumes (folders) for the next run. DAG run histories will remain intact.
 
     docker compose down
 
@@ -91,3 +93,30 @@ Option (iii) To delete all files, use `--volumes --rmi all`. Will have to re-dow
     docker compose down --volumes --rmi all
 
 To restart container, do **Step 3** and **Step 4**.
+
+---
+## Set up Airflow to send email from Gmail
+
+First, create a Google "App Password" for your Gmail account. This is done so that you don't use your original password or 2 Factor authentication.
+
+Visit your [App passwords](https://security.google.com/settings/security/apppasswords) page. You may be asked to sign in to your Google Account. <br>
+* Under "Your app passwords", click **Select app** and choose "Mail". <br>
+* Click **Select device** and choose "Other (Custom name)" so that you can input "Airflow". <br>
+* Select **Generate**. <br>
+* Copy the generated App password (the 16 character code in the yellow bar), for example xxxxyyyyxxxxyyyy. <br>
+* Select **Done**. <br>
+* Once you are finished, you won’t see that App password code again. <br>However, you will see a list of apps and devices (which you've created App passwords for) in your Google Account.
+
+Next is to set up the Airflow SMTP server, edit `docker-compose.yaml`
+
+    environment:
+      AIRFLOW__SMTP__SMTP_HOST: smtp.gmail.com
+      AIRFLOW__SMTP__STARTTLS: 'true'
+      AIRFLOW__SMTP__SSL: 'false'
+      AIRFLOW__SMTP__SMTP_PORT: 587
+      AIRFLOW__SMTP__SMTP_USER: mypersonalemail@gmail.com
+      AIRFLOW__SMTP__SMTP_PASSWORD: xxxxyyyyxxxxyyyy
+      AIRFLOW__SMTP__SMTP_MAIL_FROM: mypersonalemail@gmail.com
+
+
+
