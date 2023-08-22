@@ -9,9 +9,9 @@ This DAG provides sample codes for various purposes:
 
 Version: 
 2023-01-12 created test DAG.
+2023-08-22 removed Excel encoding, added sys.path, updated yahoo email, added task "email_on_failure"
 '''
 
-import sys
 import os
 import pandas as pd
 from datetime import datetime, timedelta, timezone
@@ -25,9 +25,21 @@ from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.email_operator import EmailOperator
 from pathlib import Path
 
+import sys
+sys.path.append('/opt/airflow/utils')
+# from utils import custom_tools as ct
 
-# sys.path.append('/home/my_custom_library/')
-# import custom_tools as ct
+
+temp_storage_path = os.path.join(os.getcwd(), 'temp')                     #/opt/airflow/temp
+excel_file_path2 = os.path.join(temp_storage_path, 'testJamesDAG.csv')    #/opt/airflow/temp/testJamesDAG.csv
+excel_file_path = os.path.join(temp_storage_path, 'testJamesDAG.xlsx')    #/opt/airflow/temp/testJamesDAG.xlsx
+localtz = pytz.timezone('Asia/Singapore')
+try:
+    support_email = Variable.get('testJamesDAG_support_emails', deserialize_json=True)['emails']    #from Airflow.Admin.Variables    #note: use "double" quotes json body
+                                                                                                    #testJamesDAG_support_emails = {"emails": [ "jnyh@yahoo.com", "jnyh@yahoo.com" ]}
+except:
+    support_email = ['jnyh@yahoo.com']
+
 
 
 DAG_ID = 'testJamesDAG'    #same as filename testJamesDAG.py
@@ -36,7 +48,10 @@ default_args = {
     'depends_on_past': False,
     'start_date': datetime(2023, 1, 1),
     'retries': 0,
-    'retry_delay': timedelta(minutes=3)
+    'retry_delay': timedelta(minutes=3),
+    'email_on_retry': False,
+    'email_on_failure': True,
+    'email': support_email
     }
 dag = DAG(
     dag_id = DAG_ID, 
@@ -48,10 +63,6 @@ dag = DAG(
     )
 
 
-temp_storage_path = os.path.join(os.getcwd(), 'temp')                     #/opt/airflow/temp
-excel_file_path2 = os.path.join(temp_storage_path, 'testJamesDAG.csv')    #/opt/airflow/temp/testJamesDAG.csv
-excel_file_path = os.path.join(temp_storage_path, 'testJamesDAG.xlsx')    #/opt/airflow/temp/testJamesDAG.xlsx
-localtz = pytz.timezone('Asia/Singapore')
 
 
 
@@ -106,15 +117,15 @@ def create_excel(**kwargs):
     print(os.getcwd())              #current working directory is /opt/airflow
     print(os.listdir(os.curdir))    #['logs', 'dags', 'airflow-worker.pid', 'airflow.cfg', 'webserver_config.py', 'temp', 'config']
     if not os.path.exists(temp_storage_path):
-        os.makedirs(temp_storage_path)
+        os.makedirs(temp_storage_path)    #create `temp` folder if not exists
 
     #convert to CSV file
     df1.to_csv(excel_file_path2, index=False)
 
     #convert to Excel file
     with pd.ExcelWriter(excel_file_path) as writer:
-        df1.to_excel(writer, sheet_name='sheet1', encoding='utf-8-sig', index=False)
-        df2.to_excel(writer, sheet_name='sheet2', encoding='utf-8-sig', index=False)
+        df1.to_excel(writer, sheet_name='sheet1', index=False)
+        df2.to_excel(writer, sheet_name='sheet2', index=False)
 
     file_size = Path(excel_file_path2).stat().st_size*0.000001
     print('#### Excel file path:', excel_file_path2)
@@ -126,9 +137,9 @@ def build_email_with_attachment(subject, **context):
     #### send an email with the Excel attachment
     try:
         recipient_email = Variable.get('testJamesDAG_recipient_emails', deserialize_json=True)['emails']    #from Airflow.Admin.Variables    #note: use "double" quotes json body
-    	                                                                                                    #testJamesDAG_recipient_emails = {"emails": [ "james.ng@synpulse.com", "james.ng@synpulse.com" ]}
+    	                                                                                                    #testJamesDAG_recipient_emails = {"emails": [ "jnyh@yahoo.com", "jnyh@yahoo.com" ]}
     except:
-        recipient_email = ['james.ng@synpulse.com']
+        recipient_email = ['jnyh@yahoo.com']
 
     print('#### recipient_email:', recipient_email)
 
@@ -154,6 +165,16 @@ def build_email_with_attachment(subject, **context):
         html_content = ('Hi ' + addressee + '... <br>Excel file size has exceeded 20MB. <br><br>Please contact Support.')
         )
     email_op.execute(context)
+
+
+
+def email_on_failure(**kwargs):
+    #### to send email when a failure is encountered
+
+    #do something, then an error is encountered
+    raise ValueError('Intentionally throwing an error to send an email.')
+    #the DAG stops running after this!
+
 
 
 
@@ -203,5 +224,12 @@ build_email_with_attachment = PythonOperator(
     dag = dag
 )
 
+email_on_failure = PythonOperator(
+    task_id = 'email_on_failure',
+    provide_context = True,
+    python_callable = email_on_failure,
+    dag = dag
+)
 
-print_hello >> get_payload >> get_task_instance >> get_some_kwargs >> create_excel >> build_email_with_attachment
+
+print_hello >> get_payload >> get_task_instance >> get_some_kwargs >> create_excel >> build_email_with_attachment >> email_on_failure
