@@ -14,7 +14,7 @@ The DAG file `testJamesDAG.py` illustrates the DAG structure, and contains some 
 For a deeper learning about Airflow, please refer to another repository, where I have captured notes from a course in DataCamp: https://github.com/JNYH/DataCamp_Introduction_to_Airflow
 
 ---
-## Install Airflow in Docker
+## Install Airflow with Docker
 Reference from [Airflow documentation](https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html)
 
 
@@ -33,22 +33,27 @@ For SSL issue run this instead:
 
 To remove example DAGs, edit `docker-compose.yaml`
 
-    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
-
-To add access folders, edit `docker-compose.yaml`
-
-    - ${AIRFLOW_PROJ_DIR:-.}/utils:/opt/airflow/utils
+    environment:
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
 
 
 **Step 2**. Initialize Environment <br>
-Create the necessary files, directories and initialize the database
+Create the necessary files, directories and initialize the database. Set AIRFLOW_UID. Add libraries to `requirements.txt`.
 
-    mkdir -p ./dags ./logs ./plugins ./config
-
-Set AIRFLOW_UID 
-
+    mkdir -p ./dags ./logs ./plugins ./config ./utils
     echo "AIRFLOW_UID=50000" > .env
+    echo "openpyxl" > requirements.txt
 
+To add access folders, edit `docker-compose.yaml`
+
+    volumes:
+      - ${AIRFLOW_PROJ_DIR:-.}/utils:/opt/airflow/utils
+
+To add additional Python libraries (separated by space " "), edit `docker-compose.yaml`
+
+    environment:
+      _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:- openpyxl}
+      
 
 **Step 3**. Initialize the database (takes a few minutes)
 
