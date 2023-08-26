@@ -55,7 +55,8 @@ To add additional Python libraries (separated by space " "), edit `docker-compos
       _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:- openpyxl}
       
 
-**Step 3**. Initialize the database (takes a few minutes)
+**Step 3**. Initialize the database (takes a few minutes) <br>
+In the terminal where the file `docker-compose.yaml` is located, run this command:
 
     docker compose up airflow-init
 
