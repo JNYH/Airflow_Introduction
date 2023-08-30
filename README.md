@@ -10,6 +10,8 @@ The presentation file `Airflow_Introduction.pdf` provides a brief overview:
 
 The DAG file `testJamesDAG.py` illustrates the DAG structure, and contains some common useful functions.
 
+The DAG file `testJamesDAG-Decorator.py` has the same functions, but in the Decorator-based (Airflow 2.0+) format.
+
 ---
 For a deeper learning about Airflow, please refer to another repository, where I have captured notes from a course in DataCamp: https://github.com/JNYH/DataCamp_Introduction_to_Airflow
 
