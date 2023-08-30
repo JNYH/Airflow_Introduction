@@ -1,7 +1,7 @@
 '''
 This DAG provides sample codes for various purposes:
 * get multiple payload values
-* get task instance from previous task using xcom
+* get task instance from previous task using `xcom_pull()`
 * get some key word arguments
 * create 1 Excel file (with multiple tabs) <--- required to install Excel support library `openpyxl`
   and create 1 CSV file 
@@ -33,9 +33,9 @@ localtz = pytz.timezone('Asia/Singapore')
 
 try:
     support_email = Variable.get('testJamesDAG_support_emails', deserialize_json=True)['emails']    #from Airflow.Admin.Variables    #note: use "double" quotes json body
-                                                                                                    #testJamesDAG_support_emails = {"emails": [ "jnyh@yahoo.com", "jnyh@yahoo.com" ]}
+                                                                                                    #testJamesDAG_support_emails = {"emails": [ "myemail@email.com", "myemail@email.com" ]}
 except:
-    support_email = ['jnyh@yahoo.com']
+    support_email = ['myemail@email.com']
 
 DAG_ID = 'testJamesDAG-Decorator'    #same as filename testJamesDAG-Decorator.py
 default_args = {
@@ -129,9 +129,9 @@ def my_dag():
         #### send an email with the Excel attachment
         try:
             recipient_email = Variable.get('testJamesDAG_recipient_emails', deserialize_json=True)['emails']    #from Airflow.Admin.Variables    #note: use "double" quotes json body
-                                                                                                                #testJamesDAG_recipient_emails = {"emails": [ "jnyh@yahoo.com", "jnyh@yahoo.com" ]}
+                                                                                                                #testJamesDAG_recipient_emails = {"emails": [ "myemail@email.com", "myemail@email.com" ]}
         except:
-            recipient_email = ['jnyh@yahoo.com']
+            recipient_email = ['myemail@email.com']
 
         print('#### recipient_email:', recipient_email)
 
